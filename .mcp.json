@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "campaign-builder": {
+      "command": "python3",
+      "args": ["mcp_server.py"],
+      "cwd": "/Users/cheyenetwining/agentic-campaign-builder",
+      "env": {
+        "TTD_API_KEY": "",
+        "TTD_ADVERTISER_ID": "",
+        "DV360_ACCESS_TOKEN": "",
+        "DV360_ADVERTISER_ID": "",
+        "AMAZON_CLIENT_ID": "",
+        "AMAZON_ACCESS_TOKEN": "",
+        "AMAZON_PROFILE_ID": ""
+      }
+    }
+  }
+}
