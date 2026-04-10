@@ -188,8 +188,56 @@ def demo_translate_media_plan() -> dict:
     return {"ttd_data": MOCK_TTD_DATA, "dv360_data": MOCK_DV360_DATA}
 
 
+def demo_run_qc(ttd_data: dict, dv360_data: dict, ttd_result: dict, dv360_result: dict):
+    header("STEP 5 of 6  ·  QC Platform Agent")
+
+    step("🔎", "Routing QC checks to DSP subagents")
+    pause(400)
+
+    # TTD QC
+    step("🔎", "TTD QC Subagent  —  GET /campaign, /adgroup, /budgetflight")
+    pause(600)
+    ttd_checks = [
+        ("Campaign count",              "≥ 1",                  "2",        "pass"),
+        ("Campaign names",              "All campaigns named",   "All named","pass"),
+        ("Goal Type",                   "Set on all campaigns",  "All set",  "pass"),
+        ("Budget flight coverage",      "Every campaign covered","All covered","pass"),
+        ("Ad group campaign links",     "All linked",            "All linked","pass"),
+    ]
+    for field, expected, actual, status in ttd_checks:
+        icon = GREEN + "✓" + RESET if status == "pass" \
+          else YELLOW + "⚠" + RESET if status == "warn" \
+          else "\033[91m✗" + RESET
+        print(f"       {icon}  {DIM}{field}{RESET}  →  {actual}")
+        pause(120)
+    success("TTD QC passed", "5/5 checks")
+
+    # DV360 QC
+    step("🔎", "DV360 QC Subagent  —  GET /insertionOrders")
+    pause(600)
+    dv360_checks = [
+        ("IO count",                        "≥ 1",              "2",          "pass"),
+        ("Acme_Brand_Video_Q2_2026_IO → Io Objective",  "Set", "Set",        "pass"),
+        ("Acme_Brand_Video_Q2_2026_IO → Budget Segments","(…) format","Valid","pass"),
+        ("Acme_Brand_Video_Q2_2026_IO → Kpi Value",     "> 0", "$12.00",     "pass"),
+        ("Acme_Brand_Display_Q2_2026_IO → Budget Segments","(…) format","Valid","pass"),
+        ("Acme_Brand_Display_Q2_2026_IO → Kpi Value",   "> 0", "$5.00",      "pass"),
+    ]
+    for field, expected, actual, status in dv360_checks:
+        icon = GREEN + "✓" + RESET if status == "pass" \
+          else YELLOW + "⚠" + RESET
+        print(f"       {icon}  {DIM}{field}{RESET}  →  {actual}")
+        pause(120)
+    success("DV360 QC passed", "6/6 checks")
+
+    warn("Amazon QC is a placeholder — implement once mapper and credentials are ready")
+
+    print()
+    print(f"  {BOLD}QC Report:{RESET}  {GREEN}{BOLD}PASS{RESET}  ·  11 checks, 0 warnings, 0 failures")
+
+
 def demo_generate_placement_names(ttd_data: dict, dv360_data: dict) -> list[str]:
-    header("STEP 2 of 5  ·  Placement Name Generator")
+    header("STEP 2 of 6  ·  Placement Name Generator")
     step("🏷 ", "Applying naming convention to all line items")
     pause(600)
 
@@ -211,7 +259,7 @@ def demo_generate_placement_names(ttd_data: dict, dv360_data: dict) -> list[str]
 
 
 def demo_build_ttd(ttd_data: dict) -> dict:
-    header("STEP 3 of 5  ·  TTD Campaign Builder")
+    header("STEP 3 of 6  ·  TTD Campaign Builder")
 
     step("📡", "Calling TTD API  —  POST /campaignset")
     pause(700)
@@ -237,7 +285,7 @@ def demo_build_ttd(ttd_data: dict) -> dict:
 
 
 def demo_build_dv360(dv360_data: dict) -> dict:
-    header("STEP 4 of 5  ·  DV360 Campaign Builder")
+    header("STEP 4 of 6  ·  DV360 Campaign Builder")
 
     for io in dv360_data["insertion_orders"]:
         step("📡", f"Creating Insertion Order: {io['Name']}")
@@ -253,7 +301,7 @@ def demo_build_dv360(dv360_data: dict) -> dict:
 
 
 def demo_summary(placement_names: list[str], ttd_result: dict, dv360_result: dict):
-    header("STEP 5 of 5  ·  Orchestrator — Build Complete")
+    header("STEP 6 of 6  ·  Orchestrator — Build Complete")
     pause(300)
 
     print(f"\n  {BOLD}Campaign:{RESET}  {MOCK_CAMPAIGN['campaign_name']}")
@@ -283,19 +331,23 @@ def print_architecture():
     print(f"""
 {BOLD}  Agentic Campaign Builder — Architecture{RESET}
 
-  {CYAN}┌─────────────────────────────────────┐{RESET}
-  {CYAN}│           Orchestrator              │{RESET}
-  {CYAN}└──────────────┬──────────────────────┘{RESET}
-                 │
-       ┌─────────┼──────────┐
-       ↓         ↓          ↓
-  {BLUE}[Translator]{RESET}  {BLUE}[Namer]{RESET}  {BLUE}[DSP Agents]─────────────┐{RESET}
-  Parses Excel  Names    {BLUE}│                          │{RESET}
-  maps to DSP   placements{BLUE}↓                          ↓{RESET}
-  fields                {BLUE}[TTD Builder]         [DV360 Builder]{RESET}
-                         Campaign Sets         Insertion Orders
-                         Ad Groups
-                         Budget Flights
+  {CYAN}┌─────────────────────────────────────────────┐{RESET}
+  {CYAN}│                Orchestrator                 │{RESET}
+  {CYAN}└──────────────────┬──────────────────────────┘{RESET}
+                     │
+       ┌─────────────┼──────────────┐
+       ↓             ↓              ↓
+  {BLUE}[Translator]{RESET}    {BLUE}[Namer]{RESET}    {BLUE}[DSP Agents]────────────┐{RESET}
+  Parses Excel    Names      {BLUE}│                         │{RESET}
+  maps to DSP     placements {BLUE}↓                         ↓{RESET}
+  fields                   {BLUE}[TTD Builder]        [DV360 Builder]{RESET}
+                             Campaign Sets        Insertion Orders
+                             Ad Groups
+                             Budget Flights
+                                   {BLUE}↓                         ↓{RESET}
+                             {BLUE}[QC Platform Agent]──────────────┘{RESET}
+                             TTD QC · DV360 QC · Amazon QC
+                             Pass / Warn / Fail per field
 
   {DIM}Future: Amazon DSP builder  ·  Bedrock runtime{RESET}
 """)
@@ -310,8 +362,6 @@ def main():
 
     print_architecture()
 
-    input(DIM + "  Press Enter to run the demo..." + RESET)
-
     translated = demo_translate_media_plan()
     pause(200)
 
@@ -325,6 +375,9 @@ def main():
     pause(200)
 
     dv360_result = demo_build_dv360(translated["dv360_data"])
+    pause(200)
+
+    demo_run_qc(translated["ttd_data"], translated["dv360_data"], ttd_result, dv360_result)
     pause(200)
 
     demo_summary(placement_names, ttd_result, dv360_result)

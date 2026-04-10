@@ -20,6 +20,7 @@ from agents.placement_name_generator.agent import run as generate_placement_name
 from agents.ttd_campaign_builder.agent import run as build_ttd_campaign
 from agents.dv360_campaign_builder.agent import run as build_dv360_campaign
 from agents.amazon_campaign_builder.agent import run as build_amazon_campaign
+from agents.qc_platform.agent import run as run_qc
 
 
 def run(campaign_input: CampaignInput) -> OrchestratorResult:
@@ -58,11 +59,22 @@ def run(campaign_input: CampaignInput) -> OrchestratorResult:
         result = build_amazon_campaign(translated.amazon_data)
         dsp_results.append(result)
 
-    # ── Step 4: Collate results ───────────────────────────────────────────────
+    # ── Step 4: QC checks ────────────────────────────────────────────────────
+    print("[Orchestrator] Running QC checks...")
+    qc_report = run_qc(translated, dsp_results)
+    overall_icon = "✓" if qc_report.overall == "pass" \
+               else "⚠" if qc_report.overall == "warn" \
+               else "✗"
+    print(f"[Orchestrator] QC {overall_icon} {qc_report.overall.upper()}")
+    for r in qc_report.results:
+        print(f"  {r.dsp}: {r.passed} passed, {r.warned} warned, {r.failed} failed")
+
+    # ── Step 5: Collate results ───────────────────────────────────────────────
     orchestrator_result = OrchestratorResult(
         campaign_name=translated.campaign_name,
         placement_names=placement_names,
         dsp_results=dsp_results,
+        qc_report=qc_report,
     )
 
     print("[Orchestrator] Complete.")

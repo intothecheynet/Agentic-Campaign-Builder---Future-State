@@ -45,8 +45,43 @@ class DSPResult:
 
 
 @dataclass
+class QCCheck:
+    """A single field-level QC check."""
+    field: str
+    expected: str
+    actual: str
+    status: str          # "pass" | "warn" | "fail"
+    note: str = ""
+
+
+@dataclass
+class QCResult:
+    """QC result for one DSP campaign."""
+    dsp: str
+    campaign_id: str
+    checks: list[QCCheck] = field(default_factory=list)
+    overall: str = "pass"   # "pass" | "warn" | "fail"
+
+    @property
+    def passed(self)  -> int: return sum(1 for c in self.checks if c.status == "pass")
+    @property
+    def warned(self)  -> int: return sum(1 for c in self.checks if c.status == "warn")
+    @property
+    def failed(self)  -> int: return sum(1 for c in self.checks if c.status == "fail")
+
+
+@dataclass
+class QCReport:
+    """Full QC report across all DSPs for a campaign."""
+    campaign_name: str
+    results: list[QCResult] = field(default_factory=list)
+    overall: str = "pass"   # "pass" | "warn" | "fail"
+
+
+@dataclass
 class OrchestratorResult:
     """Final result returned by the orchestrator."""
     campaign_name: str
     placement_names: PlacementNames
     dsp_results: list[DSPResult] = field(default_factory=list)
+    qc_report: Optional[QCReport] = None
