@@ -38,7 +38,7 @@ from agents.placement_name_generator.agent import run as _generate_placement_nam
 from agents.ttd_campaign_builder.agent import run as _build_ttd_campaign
 from agents.dv360_campaign_builder.agent import run as _build_dv360_campaign
 from agents.amazon_campaign_builder.agent import run as _build_amazon_campaign
-from orchestrator.orchestrator import run as _run_orchestrator
+from orchestrator.orchestrator import run_async as _run_orchestrator
 from agents.qc_platform.agent import run as _run_qc
 from agents.qc_platform.subagents.ttd_qc_subagent   import run as _qc_ttd
 from agents.qc_platform.subagents.dv360_qc_subagent import run as _qc_dv360
@@ -373,7 +373,7 @@ async def call_tool(name: str, arguments: dict) -> list[types.TextContent]:
                 audience_matrix_path=arguments["audience_matrix_path"],
                 trafficking_sheet_path=arguments["trafficking_sheet_path"],
             )
-            result = _run_orchestrator(campaign_input)
+            result = await _run_orchestrator(campaign_input)
             return _ok(result)
 
         else:
